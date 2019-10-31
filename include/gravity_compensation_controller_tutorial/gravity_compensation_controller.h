@@ -2,6 +2,7 @@
 #include <hardware_interface/joint_command_interface.h>
 #include <pluginlib/class_list_macros.h>
 #include <rbdl/Dynamics.h>
+#include <rbdl/Model.h>
 #include <ddynamic_reconfigure/ddynamic_reconfigure.h>
 
 namespace force_control

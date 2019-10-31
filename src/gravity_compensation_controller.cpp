@@ -1,6 +1,7 @@
 #include <XmlRpc.h>
 #include <gravity_compensation_controller_tutorial/gravity_compensation_controller.h>
-#include <rbdl/addons/urdfreader/urdfreader.h>
+//#include <rbdl/addons/urdfreader/urdfreader.h>
+#include <rbdl/addons/rbdlUrdfParser.h>
 
 namespace force_control
 {
@@ -80,18 +81,26 @@ bool GravityCompensationTutorial::init(hardware_interface::EffortJointInterface*
   if (tip_links.size() > 0)
   {
     // Parse the robot if subchains specified
-    RigidBodyDynamics::Addons::URDFReadFromParamServer(
-        &rbdl_model_, RigidBodyDynamics::FloatingBaseType::FixedBase, tip_links,
-        joint_names_, joint_position_min, joint_position_max, joint_vel_min,
-        joint_vel_max, joint_damping, joint_friction, joint_max_effort);
+    parseUrdfParamServerParameters(
+        rbdl_model_, joint_names_,
+        joint_position_min, joint_position_max, joint_vel_min,
+        joint_vel_max, joint_damping, joint_friction, joint_max_effort, false, tip_links, false);
+    //RigidBodyDynamics::Addons::URDFReadFromParamServer(
+    //    &rbdl_model_, RigidBodyDynamics::FloatingBaseType::FixedBase, tip_links,
+    //    joint_names_, joint_position_min, joint_position_max, joint_vel_min,
+    //    joint_vel_max, joint_damping, joint_friction, joint_max_effort);
   }
   else
   {
     // Parse the full robot if there is no subchain specified
-    RigidBodyDynamics::Addons::URDFReadFromParamServer(
-        &rbdl_model_, RigidBodyDynamics::FloatingBaseType::FixedBase, joint_names_,
-        joint_position_min, joint_position_max, joint_vel_min, joint_vel_max,
-        joint_damping, joint_friction, joint_max_effort);
+    parseUrdfParamServerParameters(
+        rbdl_model_, joint_names_,
+        joint_position_min, joint_position_max, joint_vel_min,
+        joint_vel_max, joint_damping, joint_friction, joint_max_effort, false, false);
+    //RigidBodyDynamics::Addons::URDFReadFromParamServer(
+    //    &rbdl_model_, RigidBodyDynamics::FloatingBaseType::FixedBase, joint_names_,
+    //    joint_position_min, joint_position_max, joint_vel_min, joint_vel_max,
+    //    joint_damping, joint_friction, joint_max_effort);
   }
 
   for (size_t i = 0; i < joint_names_.size(); i++)
@@ -191,17 +200,21 @@ bool GravityCompensationTutorial::init(hardware_interface::EffortJointInterface*
   tau_cmd_.setZero();
 
   // Allows to modify the gravity compensation parameters from the rqt reconfigure
+  ddr_.reset(new ddynamic_reconfigure::DDynamicReconfigure(control_nh));
   for (auto it = actuated_joints_.begin(); it != actuated_joints_.end(); it++)
   {
-    ddr_.reset(new ddynamic_reconfigure::DDynamicReconfigure(control_nh));
     ddr_->RegisterVariable(&it->second.friction_parameters.viscous_friction,
                            it->first + "/viscous_friction_gain");
     ddr_->RegisterVariable(&it->second.friction_parameters.static_friction,
                            it->first + "/static_friction_gain");
     ddr_->RegisterVariable(&it->second.friction_parameters.velocity_tolerance,
                            it->first + "/velocity_tolerance_gain");
-    ddr_->PublishServicesTopics();
+    ddr_->RegisterVariable(&it->second.actuator_parameters.motor_torque_constant,
+                           it->first + "/motor_torque_constant");
+    ddr_->RegisterVariable(&it->second.actuator_parameters.reduction_ratio,
+                           it->first + "/reduction_ratio");
   }
+  ddr_->PublishServicesTopics();
 
   return true;
 }

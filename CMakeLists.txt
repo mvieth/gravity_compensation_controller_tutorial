@@ -14,6 +14,8 @@ set(CATKIN_COMPONENTS
 
 find_package(catkin REQUIRED COMPONENTS ${CATKIN_COMPONENTS})
 
+find_package(Eigen3 REQUIRED)
+
 catkin_package(
   INCLUDE_DIRS include
 #  LIBRARIES ${PROJECT_NAME}
@@ -24,6 +26,7 @@ catkin_package(
 include_directories(
   include
   ${catkin_INCLUDE_DIRS}
+  ${EIGEN3_INCLUDE_DIRS}
 )
 
 add_library(${PROJECT_NAME} src/gravity_compensation_controller.cpp)
@@ -56,7 +59,7 @@ if (CATKIN_ENABLE_TESTING)
 
     set(TEST_REQUIRED_CATKIN_COMPONENTS
         controller_manager_msgs
-        gazebo_msgs
+        #gazebo_msgs
         ${REQUIRED_CATKIN_COMPONENTS})
 
     find_package(rostest REQUIRED)
